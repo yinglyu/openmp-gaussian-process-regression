@@ -22,26 +22,84 @@ vector<vector<double>> init_grid_points(int m)
     return points;
 }
 
-vector<double> generate_random_array(int size)
+vector<double> generate_zero_array(int size)
 {
     vector<double> array;
     for (int i = 0; i < size; i++)
     {
-        double d = 0.1 * (drand48() - 0.5);
+        double d = 0.0;
         array.push_back(d);
     }
     return array;
 }
 
-vector<double> init_observed_data_vector(int n, vector<vector<double>> XY)
+vector<vector<double>> generate_zero_matrix(int x, int y)
+{
+    vector<vector<double>> matrix;
+    for (int i = 0; i < x; i++)
+    {
+        vector<double> row = generate_zero_array(y);
+        matrix.push_back(row);
+    }
+    return matrix;
+}
+
+vector<double> init_observed_data_vector(vector<vector<double>> XY)
 {
     vector<double> f;
-    f = generate_random_array(n);
+    f = generate_zero_array(XY.size());
     for (size_t i = 0; i < f.size(); i++)
     {
-        f[i] = f[i] + 1.0 + pow(XY[i][0] - 0.5, 2) + pow(XY[i][1] - 0.5, 2);
+        f[i] = f[i] + 1.0 + pow(XY[i][0] - 0.5, 2) + pow(XY[i][1] - 0.5, 2) + 0.1 * (drand48() - 0.5);
     }
     return f;
+}
+
+double compute_predicted_value(vector<vector<double>> XY, vector<double> f, vector<double> rstar)
+{
+    int n = XY.size();
+    vector<vector<double>> A;
+    A = generate_zero_matrix(n, n);
+    size_t h, i, j;
+    int d, t, m;
+    //Initialize K
+    for (i = 0; i < n; i ++)
+    {
+        for (j = 0; j < n; j++)
+        {
+            d = pow(XY[i][0] - XY[j][0], 2) + pow(XY[i][1] - XY[j][1],2);
+            A[i][j] = exp(-d);
+        }
+    }
+    //Compute A = tI+K
+    t = 0.01;
+    for (i = 0; i < n; i ++)
+    {
+        A[i][i] += t;
+    }
+    //Compute LU factorization of tI + K
+    for (h = 0; h < n - 1; h ++)
+    {
+        for (i = h + 1; i < n; i ++)
+        {
+            m = A[i][h] / A[h][h];
+            for (j = h + 1; j < n; j ++)
+            {
+                A[i][j] -= m * A[h][j];
+            }
+            A[i][h] = m;
+        }
+    }
+    vector<double> k;
+    k = generate_zero_array(n);
+    for (i = 0; i < n; i ++)
+    {
+        d = pow(rstar[0]-XY[i][0], 2) + pow(rstar[1]-XY[i][1], 2);
+        k[i] = exp(-d);
+    }
+    double fstar = 1.0;
+    //Compute predicted value fstar at rstar
+    return fstar;    
 }
 
 void print_array(vector<double> array)
@@ -73,25 +131,29 @@ int main(int argc, char** argv)
     double dtime;
 
     int m = 4;
-    double Rx = 0.5, Ry = 0.5;
+    vector<double> rstar;
     if (argc > 3){
         m = stoi(argv[1]);
-        Rx = stod(argv[2]);
-        Ry = stod(argv[3]);
+        rstar.push_back(stod(argv[2]));
+        rstar.push_back(stod(argv[3]));
     }else{
         cout << "Please indicate grid size and coordinate of r*" << endl;
         return -1;
     }
 
-    int n = m * m;
     vector<vector<double>> XY; //x and y coordinates of grid points
     vector<double> f;//observed data vector f
-    
+    double fstar, start, total_time; 
     cout << "Size of the Grid is:" << m << "*" << m << endl;
-    cout << "Given point is:(" << Rx << ", " << Ry << ")" << endl;
+    cout << "Given point is:(" << rstar[0] << ", " << rstar[1] << ")" << endl;
     XY = init_grid_points(m);
     print_matrix(XY);
-    f = init_observed_data_vector(n, XY);
+    f = init_observed_data_vector(XY);
     print_array(f);
+    start = omp_get_wtime();
+    fstar = compute_predicted_value(XY, f, rstar); 
+    total_time = omp_get_wtime()-start;
+    cout << "Predicted value is " << fstar << endl;
+    cout << "time (sec) = " << total_time << endl;
     return 0;
 }
