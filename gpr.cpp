@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <time.h>
+#include <math.h>
 #include <omp.h>
 using namespace std;
 
@@ -30,6 +31,17 @@ vector<double> generate_random_array(int size)
         array.push_back(d);
     }
     return array;
+}
+
+vector<double> init_observed_data_vector(int n, vector<vector<double>> XY)
+{
+    vector<double> f;
+    f = generate_random_array(n);
+    for (size_t i = 0; i < f.size(); i++)
+    {
+        f[i] = f[i] + 1.0 + pow(XY[i][0] - 0.5, 2) + pow(XY[i][1] - 0.5, 2);
+    }
+    return f;
 }
 
 void print_array(vector<double> array)
@@ -79,7 +91,7 @@ int main(int argc, char** argv)
     cout << "Given point is:(" << Rx << ", " << Ry << ")" << endl;
     XY = init_grid_points(m);
     print_matrix(XY);
-    f = generate_random_array(n);
+    f = init_observed_data_vector(n, XY);
     print_array(f);
     return 0;
 }
