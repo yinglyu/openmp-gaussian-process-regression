@@ -76,6 +76,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     //# pragma omp parallel for collapse(3)
     for (h = 0; h < n - 1; h ++)
     {
+        # pragma omp parallel for shared(A) private(i, j)
         for (i = h + 1; i < n; i ++)
         {
             m = A[i][h] / A[h][h];
