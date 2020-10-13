@@ -40,12 +40,12 @@ vector<double> init_observed_data_vector(vector<vector<double>> XY)
 double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, vector<double> &rstar)
 {
     int n = XY.size();
-    double start = omp_get_wtime(); 
+    //double start = omp_get_wtime(); 
     vector<vector<double>> A(n, vector<double>(n, 0));
     vector<double> k(n, 0);
     vector<double> y(n, 0);
     vector<double> z(n, 0);
-    cout << omp_get_wtime() - start << endl;
+    //cout << omp_get_wtime() - start << endl;
     int h, i, j;
     double d, t, m;
     //Initialize K
@@ -185,20 +185,24 @@ int main(int argc, char** argv)
     
     f = init_observed_data_vector(XY);
     //print_array(f);
-    
-    start = omp_get_wtime();
-    fstar = compute_predicted_value(XY, f, rstar); 
-    total_time = omp_get_wtime()-start;
-    
-    int p;
-    #pragma omp parallel
+    vector<int> threads = {1, 2, 4, 8, 16, 20};
+    for (int i = 0; i < threads.size(); i++)
     {
-        p = omp_get_num_threads();
+        omp_set_num_threads(threads[i]);
+        start = omp_get_wtime();
+        fstar = compute_predicted_value(XY, f, rstar); 
+        total_time = omp_get_wtime()-start;
+        
+        int p;
+        #pragma omp parallel
+        {
+            p = omp_get_num_threads();
+        }
+        
+        cout << "m = " << m;
+        cout << ", p = " << p;
+        cout << ", f(" << rstar[0] << ", " << rstar[1] << ") = " << fstar;
+        cout << ", time (sec) = " << total_time << endl;
     }
-    
-    cout << "m = " << m;
-    cout << ", p = " << p;
-    cout << ", f(" << rstar[0] << ", " << rstar[1] << ") = " << fstar;
-    cout << ", time (sec) = " << total_time << endl;
     return 0;
 }
