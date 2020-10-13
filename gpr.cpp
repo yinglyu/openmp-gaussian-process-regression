@@ -44,7 +44,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     int h, i, j;
     double d, t, m;
     //Initialize K
-    # pragma omp parallel for collapse(2) shared(A, XY) private(i, j, d, n)
+    # pragma omp parallel for collapse(2) shared(A, XY) private(i, j)
     for (i = 0; i < n; i ++)
     {
         for (j = 0; j < n; j++)
@@ -57,7 +57,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     //print_matrix(A);
     //Compute A = tI+K
     t = 0.01;
-    # pragma omp parallel for shared(A) private(i, t, n)
+    # pragma omp parallel for shared(A) private(i)
     for (i = 0; i < n; i ++)
     {
         A[i][i] += t;
@@ -70,7 +70,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
         for (i = h + 1; i < n; i ++)
         {
             m = A[i][h] / A[h][h];
-            # pragma omp parallel for shared(A) private(i, j, h, m)
+            # pragma omp parallel for shared(A) private(j)
             for (j = h + 1; j < n; j ++)
             {
                 A[i][j] -= m * A[h][j];
@@ -96,7 +96,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     for (i = 0; i < n; i ++)
     {
         m = 0;
-        # pragma omp parallel for private(i, j) reduction(+:m)
+        # pragma omp parallel for private(j) reduction(+:m)
         for (j = 0; j < i; j ++)
         {
             m += A[i][j] * f[j];
@@ -110,7 +110,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     for (i = n - 1; i >= 0; i --)
     {
         m = 0;
-        # pragma omp parallel for private(i, j, n) reduction(+:m)
+        # pragma omp parallel for private(j) reduction(+:m)
         for (j = i + 1; j < n; j ++)
         {
             m += A[i][j] * f[j];
@@ -121,7 +121,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     //print_array(z);
     double fstar = 0.0;
     //Compute predicted value fstar at rstar: k'*z
-    # pragma omp parallel for private(i, n) reduction(+:fstar)
+    # pragma omp parallel for private(i) reduction(+:fstar)
     for (i = 0; i < n; i ++)
     {
         fstar += k[i] * f[i];
