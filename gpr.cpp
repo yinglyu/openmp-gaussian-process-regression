@@ -40,11 +40,18 @@ vector<double> init_observed_data_vector(vector<vector<double>> XY)
 double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, vector<double> &rstar)
 {
     int n = XY.size();
+    double start = omp_get_wtime(); 
     vector<vector<double>> A(n, vector<double>(n, 0));
+    vector<double> k(n, 0);
+    vector<double> y(n, 0);
+    vector<double> z(n, 0);
+    cout << omp_get_wtime() - start << endl;
     int h, i, j;
     double d, t, m;
     //Initialize K
-    # pragma omp parallel for collapse(2) shared(A, XY) private(i, j)
+    # pragma omp parallel proc_bind(close)
+    {
+    # pragma omp for collapse(2)
     for (i = 0; i < n; i ++)
     {
         for (j = 0; j < n; j++)
@@ -57,20 +64,22 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     //print_matrix(A);
     //Compute A = tI+K
     t = 0.01;
-    # pragma omp parallel for shared(A) private(i)
+    # pragma omp for
     for (i = 0; i < n; i ++)
     {
         A[i][i] += t;
     }
+    }
     //cout << "A:" << endl;
     //print_matrix(A);
     //Compute LU factorization of tI + K
+    //# pragma omp parallel for collapse(3)
     for (h = 0; h < n - 1; h ++)
     {
         for (i = h + 1; i < n; i ++)
         {
             m = A[i][h] / A[h][h];
-            # pragma omp parallel for shared(A) private(j)
+            //# pragma omp parallel for shared(A) private(j)
             for (j = h + 1; j < n; j ++)
             {
                 A[i][j] -= m * A[h][j];
@@ -80,19 +89,18 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     }
     //cout << "LU:" << endl;
     //print_matrix(A);
-    vector<double> k(n, 0);
     # pragma omp parallel for default(shared) private(i, d)
     for (i = 0; i < n; i ++)
     {
         d = pow(rstar[0]-XY[i][0], 2) + pow(rstar[1]-XY[i][1], 2);
         k[i] = exp(-d);
     }
+    
     //cout << "k:" << endl;
     //print_array(k);
     
     //Solve Az = f LUz = f
     //1. Solve Ly = f for y
-    vector<double> y(n, 0);
     for (i = 0; i < n; i ++)
     {
         m = 0;
@@ -106,7 +114,6 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     //cout << "y:" << endl;
     //print_array(y);
     //2. Solve Uz = y for z
-    vector<double> z(n, 0);
     for (i = n - 1; i >= 0; i --)
     {
         m = 0;
@@ -121,11 +128,12 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     //print_array(z);
     double fstar = 0.0;
     //Compute predicted value fstar at rstar: k'*z
-    # pragma omp parallel for private(i) reduction(+:fstar)
+    //# pragma omp parallel for private(i) reduction(+:fstar)
     for (i = 0; i < n; i ++)
     {
         fstar += k[i] * z[i];
     }
+    
     return fstar;    
 }
 
