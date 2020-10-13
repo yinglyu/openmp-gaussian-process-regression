@@ -92,30 +92,30 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     
     //Solve Az = f LUz = f
     //1. Solve Ly = f for y
-    //vector<double> y(n, 0);
+    vector<double> y(n, 0);
     for (i = 0; i < n; i ++)
     {
         m = 0;
         # pragma omp parallel for private(j) reduction(+:m)
         for (j = 0; j < i; j ++)
         {
-            m += A[i][j] * f[j];
+            m += A[i][j] * y[j];
         }
-        f[i] = f[i] - m;
+        y[i] = f[i] - m;
     }
     //cout << "y:" << endl;
     //print_array(y);
     //2. Solve Uz = y for z
-    //vector<double> z(n, 0);
+    vector<double> z(n, 0);
     for (i = n - 1; i >= 0; i --)
     {
         m = 0;
         # pragma omp parallel for private(j) reduction(+:m)
         for (j = i + 1; j < n; j ++)
         {
-            m += A[i][j] * f[j];
+            m += A[i][j] * z[j];
         }
-        f[i] = (f[i]-m)/A[i][i];
+        z[i] = (y[i]-m)/A[i][i];
     }
     //cout << "z:" << endl; 
     //print_array(z);
@@ -124,7 +124,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     # pragma omp parallel for private(i) reduction(+:fstar)
     for (i = 0; i < n; i ++)
     {
-        fstar += k[i] * f[i];
+        fstar += k[i] * z[i];
     }
     return fstar;    
 }
