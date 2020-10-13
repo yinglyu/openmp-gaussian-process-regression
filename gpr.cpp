@@ -49,7 +49,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     int h, i, j;
     double d, t, m;
     //Initialize K
-    # pragma omp parallel proc_bind(close)
+    # pragma omp parallel private(d, i, j) proc_bind(close)
     {
     # pragma omp for collapse(2)
     for (i = 0; i < n; i ++)
@@ -73,14 +73,12 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     //cout << "A:" << endl;
     //print_matrix(A);
     //Compute LU factorization of tI + K
-    //# pragma omp parallel for collapse(3)
     for (h = 0; h < n - 1; h ++)
     {
-        # pragma omp parallel for shared(A) private(i, j)
+        # pragma omp parallel for shared(A) private(i, j, m)
         for (i = h + 1; i < n; i ++)
         {
             m = A[i][h] / A[h][h];
-            //# pragma omp parallel for shared(A) private(j)
             for (j = h + 1; j < n; j ++)
             {
                 A[i][j] -= m * A[h][j];
@@ -129,7 +127,7 @@ double compute_predicted_value(vector<vector<double>> &XY, vector<double> &f, ve
     //print_array(z);
     double fstar = 0.0;
     //Compute predicted value fstar at rstar: k'*z
-    //# pragma omp parallel for private(i) reduction(+:fstar)
+    # pragma omp parallel for private(i) reduction(+:fstar)
     for (i = 0; i < n; i ++)
     {
         fstar += k[i] * z[i];
@@ -204,5 +202,14 @@ int main(int argc, char** argv)
         cout << ", f(" << rstar[0] << ", " << rstar[1] << ") = " << fstar;
         cout << ", time (sec) = " << total_time << endl;
     }
+    /*
+    Thread = 20
+    m = 64, p = 1, f(0.5, 0.5) = 0.996263, time (sec) = 23.8683
+    m = 64, p = 2, f(0.5, 0.5) = 0.996263, time (sec) = 14.5399
+    m = 64, p = 4, f(0.5, 0.5) = 0.996263, time (sec) = 8.93856
+    m = 64, p = 8, f(0.5, 0.5) = 0.996263, time (sec) = 7.0944
+    m = 64, p = 16, f(0.5, 0.5) = 0.996263, time (sec) = 6.71772
+    m = 64, p = 20, f(0.5, 0.5) = 0.996263, time (sec) = 6.79132
+    */
     return 0;
 }
