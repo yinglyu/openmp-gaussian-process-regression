@@ -195,7 +195,7 @@ int main(int argc, char** argv)
 
     vector<vector<double>> XY, A, LU;     
     vector<double> f, k, z;    
-    double fstar, start, LU_time, solver_time; 
+    double fstar, start, LU_time, solver_time, LU_floats, solver_floats; 
     
     XY = init_grid_points(m);//x and y coordinates of grid points
     //cout << "XY:" << endl;
@@ -212,7 +212,11 @@ int main(int argc, char** argv)
     k = compute_k(XY, rstar);
     //cout << "k:" << endl;
     //print_array(k); 
-  
+    
+    double n = XY.size();
+    LU_floats = n*(n-1)*(4*n+1)/6;
+    solver_floats = n*(4+n);
+    
     vector<int> threads = {1, 2, 4, 8, 16, 20};
     for (int i = 0; i < threads.size(); i++)
     {
@@ -240,7 +244,12 @@ int main(int argc, char** argv)
         cout << "m = " << m;
         cout << ", p = " << p;
         cout << ", f(" << rstar[0] << ", " << rstar[1] << ") = " << fstar;
-        cout << ", time (sec) = " << LU_time << endl;
+        cout << ", LU_time (sec) = " << LU_time;
+        cout << ", LU_FLOPS = " << LU_floats/LU_time;
+        cout << ", solver_time (sec) = " << solver_time;
+        cout << ", solver_FLOPS = " << solver_floats/solver_time;
+         
+        cout << endl;
     }
     return 0;
 }
