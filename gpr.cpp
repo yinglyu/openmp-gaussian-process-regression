@@ -73,7 +73,7 @@ vector<vector<double>> compute_LU_factors(vector<vector<double>> A)
     double m;
     for (k = 0; k < n - 1; k ++)
     {
-        # pragma omp parallel for shared(A) private(i, j)
+        # pragma omp parallel for shared(A) private(i, j, m) proc_bind(close) 
         for (i = k + 1; i < n; i ++)
         {
             m = A[i][k] / A[k][k];
@@ -87,7 +87,7 @@ vector<vector<double>> compute_LU_factors(vector<vector<double>> A)
     return A;
 }
 
-vector<double> solve_triangular_systems(vector<vector<double>> &A, vector<double> f)
+vector<double> solve_triangular_systems(vector<vector<double>> A, vector<double> f)
 {
     int n = A.size();
     vector<double> y(n, 0);
@@ -99,11 +99,16 @@ vector<double> solve_triangular_systems(vector<vector<double>> &A, vector<double
     for (i = 0; i < n; i ++)
     {
         m = 0;
-        # pragma omp parallel for private(j) reduction(+:m)
+        int chunk = i/omp_get_num_threads();
+        # pragma omp parallel default(shared) proc_bind(close)
+        {
+        # pragma omp for private(j) reduction(+:m) schedule(static, chunk)
         for (j = 0; j < i; j ++)
         {
             m += A[i][j] * y[j];
         }
+        }
+
         y[i] = f[i] - m;
     }
     //cout << "y:" << endl;
@@ -113,12 +118,17 @@ vector<double> solve_triangular_systems(vector<vector<double>> &A, vector<double
     for (i = n - 1; i >= 0; i --)
     {
         m = 0;
-        # pragma omp parallel for private(j) reduction(+:m)
+        int chunk = (n-i)/omp_get_num_threads();
+        # pragma omp parallel default(shared) proc_bind(close)
+        {
+        # pragma omp for private(j) reduction(+:m) schedule(static, chunk)
         for (j = i + 1; j < n; j ++)
         {
             m += A[i][j] * z[j];
         }
+        }
         z[i] = (y[i]-m)/A[i][i];
+        
     }
     //cout << "z:" << endl; 
     //print_array(z);   
