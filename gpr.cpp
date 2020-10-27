@@ -240,23 +240,9 @@ int main(int argc, char** argv)
     total_time = LU_time + solver_time;
     
     fstar = compute_fstar(k, z);
-    /*int p;
-    #pragma omp parallel
-    {
-        p = omp_get_num_threads();
-    }
-    
-    cout << "m = " << m << ", ";
-    cout << "p = " << p << ", ";
-    cout << "f(" << rstar[0] << ", " << rstar[1] << ") = " << fstar;
-    cout << ", LU_time (sec) = " << LU_time;
-    cout << ", LU_FLOPS = " << LU_floats/LU_time;
-    cout << ", solver_time (sec) = " << solver_time;
-    cout << ", solver_FLOPS = " << solver_floats/solver_time;
-    */
     cout << "Total time = " << total_time << " seconds, ";
     cout << "Predicted value = " << fstar;
         
-        cout << endl;
+    cout << endl;
     return 0;
 }
