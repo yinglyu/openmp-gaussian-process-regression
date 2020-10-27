@@ -205,7 +205,7 @@ int main(int argc, char** argv)
 
     vector<vector<double>> XY, A, LU;     
     vector<double> f, k, z;    
-    double fstar, start, LU_time, solver_time, LU_floats, solver_floats; 
+    double fstar, start, LU_time, solver_time, total_time, LU_floats, solver_floats; 
     
     XY = init_grid_points(m);//x and y coordinates of grid points
     //cout << "XY:" << endl;
@@ -226,40 +226,23 @@ int main(int argc, char** argv)
     double n = XY.size();
     LU_floats = n*(n-1)*(4*n+1)/6;
     solver_floats = n*(4+n);
-    
-    vector<int> threads = {1, 2, 4, 8, 16, 20};
-    for (int i = 0; i < threads.size(); i++)
-    {
-        omp_set_num_threads(threads[i]);
-        
-        start = omp_get_wtime();
-        LU = compute_LU_factors(A); //LU factorization of A
-        //cout << "LU:" <<endl;
-        //print_matrix(LU);
-        LU_time = omp_get_wtime()-start;
+    start = omp_get_wtime();
+    LU = compute_LU_factors(A); //LU factorization of A
+    //cout << "LU:" <<endl;
+    //print_matrix(LU);
+    LU_time = omp_get_wtime()-start;
 
-        start = omp_get_wtime(); 
-        z = solve_triangular_systems(LU, f);
-        //cout << "z:" << endl;
-        //print_array(z); 
-        solver_time = omp_get_wtime()-start;
+    start = omp_get_wtime(); 
+    z = solve_triangular_systems(LU, f);
+    //cout << "z:" << endl;
+    //print_array(z); 
+    solver_time = omp_get_wtime()-start;
+    total_time = LU_time + solver_time;
+    
+    fstar = compute_fstar(k, z);
+    cout << "Total time = " << total_time << " seconds, ";
+    cout << "Predicted value = " << fstar;
         
-        fstar = compute_fstar(k, z);
-        int p;
-        #pragma omp parallel
-        {
-            p = omp_get_num_threads();
-        }
-        
-        cout << "m = " << m;
-        cout << ", p = " << p;
-        cout << ", f(" << rstar[0] << ", " << rstar[1] << ") = " << fstar;
-        cout << ", LU_time (sec) = " << LU_time;
-        cout << ", LU_FLOPS = " << LU_floats/LU_time;
-        cout << ", solver_time (sec) = " << solver_time;
-        cout << ", solver_FLOPS = " << solver_floats/solver_time;
-         
-        cout << endl;
-    }
+    cout << endl;
     return 0;
 }
