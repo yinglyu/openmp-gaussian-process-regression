@@ -32,7 +32,7 @@ vector<double> init_observed_data_vector(vector<vector<double>> XY)
     # pragma omp for
     for (size_t i = 0; i < f.size(); i++)
     {
-        f[i] = 1.0 + pow(XY[i][0] - 0.5, 2) + pow(XY[i][1] - 0.5, 2) + 0.1 * (drand48() - 0.5);
+        f[i] = 1.0 - pow(XY[i][0] - 0.5, 2) - pow(XY[i][1] - 0.5, 2) + 0.1 * (drand48() - 0.5);
     }
     return f;
 }
